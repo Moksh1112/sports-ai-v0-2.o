@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "football-analysis-api"
+version = "0.1.0"
+description = "AI Football Talent Analysis API"
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "python-dotenv>=1.0.0",
+    "pymongo>=4.6.0",
+    "pydantic>=2.5.0",
+    "werkzeug>=3.0.0",
+    "opencv-python>=4.8.0",
+    "mediapipe>=0.10.0",
+    "numpy>=1.24.0",
+    "bcrypt>=4.1.0",
+    "pyjwt>=2.8.0"
+]
