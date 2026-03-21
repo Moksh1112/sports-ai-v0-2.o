@@ -85,7 +85,7 @@ export default function DashboardPage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <Header />
-        
+
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {error && (
             <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -147,13 +147,12 @@ export default function DashboardPage() {
                             Uploaded: {new Date(video.created_at).toLocaleDateString()}
                           </p>
                           <div className="mt-2">
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                              video.status === 'analyzed'
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${video.status === 'analyzed'
                                 ? 'bg-green-100/20 text-green-700 dark:text-green-400'
                                 : video.status === 'processing'
-                                ? 'bg-blue-100/20 text-blue-700 dark:text-blue-400'
-                                : 'bg-yellow-100/20 text-yellow-700 dark:text-yellow-400'
-                            }`}>
+                                  ? 'bg-blue-100/20 text-blue-700 dark:text-blue-400'
+                                  : 'bg-yellow-100/20 text-yellow-700 dark:text-yellow-400'
+                              }`}>
                               {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
                             </span>
                           </div>

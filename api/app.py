@@ -32,13 +32,21 @@ def create_app(config_name='development'):
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(video_bp)
-    
-    # Health check endpoint
+
+    # ✅ ROOT ROUTE (FIXED POSITION)
+    @app.route("/")
+    def home():
+        return {
+            "message": "Football Analysis API is running 🚀",
+            "status": "success"
+        }
+
+    # ✅ HEALTH CHECK
     @app.route('/api/health', methods=['GET'])
     def health_check():
         return jsonify({'status': 'ok', 'message': 'API is running'}), 200
     
-    # Error handlers
+    # ✅ ERROR HANDLERS
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({'error': 'Endpoint not found'}), 404
@@ -48,6 +56,7 @@ def create_app(config_name='development'):
         return jsonify({'error': 'Internal server error'}), 500
     
     return app
+
 
 if __name__ == '__main__':
     app = create_app('development')

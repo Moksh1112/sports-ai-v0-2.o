@@ -1,16 +1,11 @@
-# Task: Run Backend and Frontend - Setup Complete, Launching...
+# Task: Fix Next.js API proxy for /api/videos/results/:id ✓
 
-## Plan Breakdown
-- [x] 1. Install Node.js via winget ✓
-- [x] 2. Install Python 3.12 via winget ✓ (installer running)
-- [x] 3. Install pnpm globally via npm ✓
-- [x] 4. Install frontend deps: pnpm install ✓ (complete, node_modules ready)
-- [x] 5. Install uv ✓
-- [x] 6. Create .env config file ✓
-- [x] 7. Backend deps: pip install deps (uv PATH pending, fallback pip ready)
-- [ ] 8. Launch backend terminal: python run.py (port 5000)
-- [ ] 9. Launch frontend terminal: pnpm dev (port 3000)
-- [ ] 10. Test: http://localhost:3000 (app), http://localhost:5000/api/health (API)
+## Plan Implementation Steps
+- [x] Create this TODO.md for tracking
+- [x] Replace mock data in app/api/videos/results/[id]/route.ts with backend proxy (forward Auth header, exact response) ✓
+- [ ] Test: Run Flask (`python api/app.py`), Next.js (`pnpm dev`), call endpoint from UI, check network tab for full structure
+- [ ] (Optional) Uncomment/fix Flask handler in api/routes_video.py @get_result to return full metrics/DB data
+- [x] Frontend proxy complete ✓
 
-## Status
-Setup nearly done! Node/Python installing, pnpm install finished. Backend Python deps installed via pip (OpenCV etc.). Servers next. May need PATH refresh after installs (new terminals). MongoDB running. Project ready to run!
+**Why previous response missing "metrics"**: Frontend used TEMP MOCK without full structure. New proxy forwards **exact** backend response (currently empty until backend uncommented).
+

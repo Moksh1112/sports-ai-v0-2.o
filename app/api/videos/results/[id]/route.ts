@@ -1,42 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const API_URL = process.env.API_URL || 'http://localhost:5000'
-
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = request.headers.get('Authorization')
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    const { id } = await params
 
-    const resultId = params.id
+    console.log("Fetching result from backend:", id)
 
-    const response = await fetch(`${API_URL}/api/videos/results/${resultId}`, {
+    // Forward to Flask backend
+    const backendUrl = `http://localhost:5000/api/videos/results/${id}`
+    const authHeader = request.headers.get('authorization')
+
+    const response = await fetch(backendUrl, {
       method: 'GET',
       headers: {
-        'Authorization': token,
+        'Authorization': authHeader || '',
         'Content-Type': 'application/json',
       },
     })
 
-    const result = await response.json()
-
     if (!response.ok) {
-      return NextResponse.json(result, { status: response.status })
+      console.error(`Backend error ${response.status}:`, await response.text())
+      return NextResponse.json(
+        { error: 'Result not found or server error' },
+        { status: response.status }
+      )
     }
 
-    return NextResponse.json(result, { status: 200 })
+    const data = await response.json()
+    console.log("Backend response:", data)
+
+    return NextResponse.json(data, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store',
+      }
+    })
+
   } catch (error) {
-    console.error('[v0] Get result API error:', error)
+    console.error("Proxy error:", error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to fetch result from backend' },
       { status: 500 }
     )
   }
 }
+

@@ -49,24 +49,24 @@ export function VideoUploadForm({ onSuccess }: UploadFormProps) {
     return new Promise((resolve) => {
       const video = document.createElement('video')
       const url = URL.createObjectURL(file)
-      
+
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(url)
         resolve(Math.floor(video.duration))
       }
-      
+
       video.onerror = () => {
         URL.revokeObjectURL(url)
         resolve(0)
       }
-      
+
       video.src = url
     })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!selectedFile || !title.trim()) {
       setError('Please select a video and enter a title')
       return
@@ -86,7 +86,7 @@ export function VideoUploadForm({ onSuccess }: UploadFormProps) {
       formData.append('drill_type', drillType)
       formData.append('duration_seconds', duration.toString())
 
-      const response = await fetch('/api/videos/upload', {
+      const response = await fetch('http://localhost:5000/api/videos/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -106,7 +106,7 @@ export function VideoUploadForm({ onSuccess }: UploadFormProps) {
       setDescription('')
       setDrillType('sprint')
       setUploadProgress(0)
-      
+
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }

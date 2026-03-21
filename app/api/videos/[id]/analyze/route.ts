@@ -1,13 +1,19 @@
+// ✅ ANALYZE ROUTE
+// Handles POST /api/videos/:id/analyze
+
 import { NextRequest, NextResponse } from 'next/server'
 
 const API_URL = process.env.API_URL || 'http://localhost:5000'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: videoId } = await params
+
     const token = request.headers.get('Authorization')
+
     if (!token) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -15,7 +21,7 @@ export async function POST(
       )
     }
 
-    const videoId = params.id
+    console.log("Analyzing video:", videoId)
 
     const response = await fetch(`${API_URL}/api/videos/${videoId}/analyze`, {
       method: 'POST',
@@ -25,17 +31,21 @@ export async function POST(
       },
     })
 
-    const result = await response.json()
+    const data = await response.json().catch(() => ({
+      error: 'Invalid backend response'
+    }))
 
     if (!response.ok) {
-      return NextResponse.json(result, { status: response.status })
+      return NextResponse.json(data, { status: response.status })
     }
 
-    return NextResponse.json(result, { status: 200 })
+    return NextResponse.json(data)
+
   } catch (error) {
-    console.error('[v0] Analyze API error:', error)
+    console.error('Analyze API error:', error)
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Analyze failed' },
       { status: 500 }
     )
   }

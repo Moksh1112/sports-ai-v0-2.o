@@ -38,7 +38,7 @@ function MetricCard({ label, value, unit = '%' }: { label: string; value: number
       <p className="text-sm text-muted-foreground mb-2">{label}</p>
       <div className="flex items-end gap-2">
         <span className="text-2xl font-bold text-foreground">
-          {typeof value === 'number' ? value.toFixed(1) : value}
+          {value.toFixed(1)}
         </span>
         <span className="text-muted-foreground mb-1">{unit}</span>
       </div>
@@ -56,6 +56,7 @@ export default function ResultsPage() {
   const params = useParams()
   const resultId = params.id as string
   const { token } = useAuth()
+
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -79,6 +80,7 @@ export default function ResultsPage() {
       }
 
       const data = await response.json()
+      console.log("RESULT DATA:", data)
       setResult(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch results')
@@ -87,11 +89,27 @@ export default function ResultsPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!result || !result.metrics) {
+    return (
+      <div className="p-12 text-center">
+        <p>Result not available</p>
+      </div>
+    )
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <Header />
-        
+
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Link href="/dashboard">
             <Button variant="outline" className="mb-6 border-border">
@@ -105,81 +123,77 @@ export default function ResultsPage() {
             </div>
           )}
 
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <Card className="border border-border bg-card p-8 mb-8">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-foreground mb-2">{result.title}</h1>
+              <p className="text-muted-foreground">
+                {new Date(result.created_at).toLocaleDateString()} •{' '}
+                <span className="capitalize font-medium">{result.drill_type}</span>
+              </p>
             </div>
-          ) : result ? (
-            <>
-              <Card className="border border-border bg-card p-8 mb-8">
-                <div className="mb-6">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">{result.title}</h1>
-                  <p className="text-muted-foreground">
-                    {new Date(result.created_at).toLocaleDateString()} • {' '}
-                    <span className="capitalize font-medium">{result.drill_type}</span>
+
+            <div className="mb-8 p-4 bg-background rounded-lg border border-border">
+              <p className="text-sm text-muted-foreground mb-2">Overall Performance</p>
+              <div className="flex items-end gap-2 mb-3">
+                <span className="text-4xl font-bold text-primary">
+                  {result.metrics.overall_score.toFixed(1)}
+                </span>
+                <span className="text-2xl text-muted-foreground mb-2">/100</span>
+              </div>
+              <div className="w-full bg-border rounded-full h-3">
+                <div
+                  className="bg-primary h-3 rounded-full"
+                  style={{ width: `${result.metrics.overall_score}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <MetricCard label="Average Speed" value={result.metrics.average_speed} />
+              <MetricCard label="Max Speed" value={result.metrics.max_speed} />
+              <MetricCard label="Balance Score" value={result.metrics.balance_score} />
+              <MetricCard label="Stride Length" value={result.metrics.stride_length} />
+              <MetricCard label="Agility Score" value={result.metrics.agility_score} />
+              <MetricCard label="Coordination" value={result.metrics.coordination_score} />
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-border">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground mb-1">Frames Processed</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {result.metrics.frames_processed}
                   </p>
                 </div>
-
-                <div className="mb-8 p-4 bg-background rounded-lg border border-border">
-                  <p className="text-sm text-muted-foreground mb-2">Overall Performance</p>
-                  <div className="flex items-end gap-2 mb-3">
-                    <span className="text-4xl font-bold text-primary">
-                      {result.metrics.overall_score.toFixed(1)}
-                    </span>
-                    <span className="text-2xl text-muted-foreground mb-2">/100</span>
-                  </div>
-                  <div className="w-full bg-border rounded-full h-3">
-                    <div
-                      className="bg-primary h-3 rounded-full transition-all"
-                      style={{ width: `${result.metrics.overall_score}%` }}
-                    />
-                  </div>
+                <div>
+                  <p className="text-muted-foreground mb-1">Confidence</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {(result.metrics.confidence * 100).toFixed(1)}%
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <MetricCard label="Average Speed" value={result.metrics.average_speed} />
-                  <MetricCard label="Max Speed" value={result.metrics.max_speed} />
-                  <MetricCard label="Balance Score" value={result.metrics.balance_score} />
-                  <MetricCard label="Stride Length" value={result.metrics.stride_length} />
-                  <MetricCard label="Agility Score" value={result.metrics.agility_score} />
-                  <MetricCard label="Coordination" value={result.metrics.coordination_score} />
+                <div>
+                  <p className="text-muted-foreground mb-1">Processing Time</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {result.processing_time_seconds.toFixed(1)}s
+                  </p>
                 </div>
-
-                <div className="mt-8 pt-6 border-t border-border">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground mb-1">Frames Processed</p>
-                      <p className="text-lg font-semibold text-foreground">{result.metrics.frames_processed}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground mb-1">Confidence</p>
-                      <p className="text-lg font-semibold text-foreground">{(result.metrics.confidence * 100).toFixed(1)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground mb-1">Processing Time</p>
-                      <p className="text-lg font-semibold text-foreground">{result.processing_time_seconds.toFixed(1)}s</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground mb-1">Status</p>
-                      <p className="text-lg font-semibold text-foreground capitalize">{result.status}</p>
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-muted-foreground mb-1">Status</p>
+                  <p className="text-lg font-semibold text-foreground capitalize">
+                    {result.status}
+                  </p>
                 </div>
-              </Card>
-
-              <div className="text-center">
-                <Link href="/dashboard">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Analyze Another Video
-                  </Button>
-                </Link>
               </div>
-            </>
-          ) : (
-            <Card className="border border-border bg-card p-12 text-center">
-              <p className="text-muted-foreground">Result not found</p>
-            </Card>
-          )}
+            </div>
+          </Card>
+
+          <div className="text-center">
+            <Link href="/dashboard">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                Analyze Another Video
+              </Button>
+            </Link>
+          </div>
         </main>
       </div>
     </ProtectedRoute>
