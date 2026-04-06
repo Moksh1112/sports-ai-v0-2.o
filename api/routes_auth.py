@@ -138,3 +138,51 @@ def get_profile():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    
+@auth_bp.route('/change-password', methods=['POST'])
+def change_password():
+    try:
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        if not token:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        from api.config import config
+        auth = AuthHandler(secret=config['default'].JWT_SECRET)
+        payload = auth.verify_token(token)
+
+        if not payload:
+            return jsonify({'error': 'Invalid token'}), 401
+
+        user_id = payload['user_id']
+
+        data = request.get_json()
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+
+        if not current_password or not new_password:
+            return jsonify({'error': 'Missing fields'}), 400
+
+        db = get_db()
+        users = db.get_collection('users')
+
+        user = users.find_one({'_id': ObjectId(user_id)})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # ✅ VERIFY OLD PASSWORD
+        if not auth.verify_password(current_password, user['password']):
+            return jsonify({'error': 'Incorrect current password'}), 400
+
+        # ✅ HASH NEW PASSWORD
+        hashed_password = auth.hash_password(new_password)
+
+        users.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': {'password': hashed_password}}
+        )
+
+        return jsonify({'message': 'Password updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

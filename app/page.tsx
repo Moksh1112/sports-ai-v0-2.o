@@ -14,8 +14,7 @@ export default function Home() {
     if (isAuthenticated) {
       router.push('/dashboard')
     }
-  }, [isAuthenticated, router])
-
+  }, [isAuthenticated])
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
