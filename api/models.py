@@ -3,6 +3,12 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
+
+class UserRole(str, Enum):
+    """User roles"""
+    USER = "user"
+    COACH = "coach"
+
 class DrillType(str, Enum):
     """Football drill types"""
     SPRINT = "sprint"
@@ -17,6 +23,7 @@ class UserSchema(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     full_name: Optional[str] = None
+    role: UserRole = UserRole.USER
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     
     class Config:
@@ -84,5 +91,25 @@ class VideoAnalysisResult(BaseModel):
                 },
                 "status": "completed",
                 "processing_time_seconds": 45.3
+            }
+        }
+
+
+class FeedbackSchema(BaseModel):
+    """Coach feedback schema"""
+    user_id: str
+    video_id: Optional[str] = None
+    result_id: Optional[str] = None
+    feedback_text: str = Field(..., min_length=1, max_length=2000)
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": "user_456",
+                "video_id": "vid_123",
+                "feedback_text": "Great improvement on sprint speed!",
+                "rating": 4
             }
         }

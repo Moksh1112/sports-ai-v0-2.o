@@ -24,11 +24,12 @@ class AuthHandler:
         """Verify password against hash"""
         return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
     
-    def create_token(self, user_id: str, email: str) -> str:
+    def create_token(self, user_id: str, email: str, role: str = 'user') -> str:
         """Create JWT token"""
         payload = {
             'user_id': user_id,
             'email': email,
+            'role': role,
             'iat': datetime.utcnow(),
             'exp': datetime.utcnow() + self.expiration
         }
@@ -80,6 +81,44 @@ def token_required(f):
         
         request.user_id = payload['user_id']
         request.user_email = payload['email']
+        request.user_role = payload.get('role', 'user')
+        
+        return f(*args, **kwargs)
+    
+    return decorated
+
+
+def coach_required(f):
+    """Decorator to require valid JWT token with coach role"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        auth_header = request.headers.get('Authorization', '')
+        
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        from api.config import config
+        from api.auth import AuthHandler
+        
+        auth = AuthHandler(
+            secret=config['default'].JWT_SECRET,
+            algorithm=config['default'].JWT_ALGORITHM
+        )
+        
+        payload = auth.verify_token(token)
+        if not payload:
+            return jsonify({'error': 'Token is invalid or expired'}), 401
+        
+        if payload.get('role') != 'coach':
+            return jsonify({'error': 'Access denied. Coach role required.'}), 403
+        
+        request.user_id = payload['user_id']
+        request.user_email = payload['email']
+        request.user_role = payload.get('role', 'user')
         
         return f(*args, **kwargs)
     

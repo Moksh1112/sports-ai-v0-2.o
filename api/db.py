@@ -65,6 +65,13 @@ class Database:
         results.create_index('video_id')
         results.create_index('created_at')
 
+        # Feedback indexes
+        feedback = self.db['feedback']
+        feedback.create_index('user_id')
+        feedback.create_index('video_id')
+        feedback.create_index('coach_id')
+        feedback.create_index('created_at')
+
     def get_collection(self, name: str):
         """Get a collection"""
         if self.db is None:

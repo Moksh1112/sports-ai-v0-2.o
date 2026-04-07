@@ -7,14 +7,18 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 export default function Home() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isCoach } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard')
+      if (isCoach) {
+        router.push('/coach/dashboard')
+      } else {
+        router.push('/dashboard')
+      }
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, isCoach])
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}

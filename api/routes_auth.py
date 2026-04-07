@@ -37,6 +37,7 @@ def register():
             'email': user_data.email,
             'password': hashed_password,
             'full_name': user_data.full_name,
+            'role': user_data.role.value if user_data.role else 'user',
             'created_at': user_data.created_at
         }
         
@@ -44,14 +45,15 @@ def register():
         user_id = str(result.inserted_id)
         
         # Create token
-        token = auth.create_token(user_id, user_data.email)
+        token = auth.create_token(user_id, user_data.email, user_doc['role'])
         
         return jsonify({
             'message': 'User registered successfully',
             'user_id': user_id,
             'token': token,
             'username': user_data.username,
-            'email': user_data.email
+            'email': user_data.email,
+            'role': user_doc['role']
         }), 201
     
     except ValidationError as e:
@@ -85,7 +87,7 @@ def login():
         
         # Create token
         user_id = str(user['_id'])
-        token = auth.create_token(user_id, user['email'])
+        token = auth.create_token(user_id, user['email'], user.get('role', 'user'))
         
         return jsonify({
             'message': 'Login successful',
@@ -93,7 +95,8 @@ def login():
             'token': token,
             'username': user.get('username'),
             'email': user['email'],
-            'full_name': user.get('full_name')
+            'full_name': user.get('full_name'),
+            'role': user.get('role', 'user')
         }), 200
     
     except ValidationError as e:
@@ -133,6 +136,7 @@ def get_profile():
             'username': user.get('username'),
             'email': user.get('email'),
             'full_name': user.get('full_name'),
+            'role': user.get('role', 'user'),
             'created_at': user.get('created_at').isoformat() if user.get('created_at') else None
         }), 200
     

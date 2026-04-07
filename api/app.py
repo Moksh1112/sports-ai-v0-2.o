@@ -29,9 +29,11 @@ def create_app(config_name='development'):
     # Register blueprints
     from api.routes_auth import auth_bp
     from api.routes_video import video_bp
+    from api.routes_coach import coach_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(video_bp)
+    app.register_blueprint(coach_bp)
 
     # ✅ ROOT ROUTE (FIXED POSITION)
     @app.route("/")

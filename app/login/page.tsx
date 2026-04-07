@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, isCoach } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -18,7 +18,11 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    router.push('/dashboard')
+    if (isCoach) {
+      router.push('/coach/dashboard')
+    } else {
+      router.push('/dashboard')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,7 +32,19 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      router.push('/dashboard')
+      // Role-based redirect happens via the auth context
+      // We check the stored user after login
+      const storedUser = localStorage.getItem('auth_user')
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser)
+        if (parsed.role === 'coach') {
+          router.push('/coach/dashboard')
+        } else {
+          router.push('/dashboard')
+        }
+      } else {
+        router.push('/dashboard')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {

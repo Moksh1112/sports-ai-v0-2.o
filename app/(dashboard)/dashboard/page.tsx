@@ -15,7 +15,10 @@ import {
   BarChart3,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  Star,
+  Award
 } from 'lucide-react'
 
 interface Video {
@@ -25,6 +28,19 @@ interface Video {
   status: string
   created_at: string
   result_id: string | null
+  metrics?: {
+    overall_score: number
+    [key: string]: number
+  }
+}
+
+interface FeedbackItem {
+  feedback_id: string
+  video_id: string | null
+  feedback_text: string
+  rating: number | null
+  coach_name: string
+  created_at: string | null
 }
 
 export default function DashboardPage() {
@@ -37,11 +53,13 @@ export default function DashboardPage() {
   const [showUpload, setShowUpload] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [analyzingId, setAnalyzingId] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<FeedbackItem[]>([])
 
   useEffect(() => {
     let isMounted = true
     if (isAuthenticated && token) {
       fetchVideos(isMounted)
+      fetchFeedback()
     }
     return () => { isMounted = false }
   }, [isAuthenticated, token])
@@ -110,6 +128,32 @@ export default function DashboardPage() {
 
   const analyzedCount = videos.filter(v => v.status === 'analyzed').length
 
+  const fetchFeedback = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/coach/my-feedback', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setFeedback(data.feedback || [])
+      }
+    } catch (err) {
+      console.error('Feedback fetch error:', err)
+    }
+  }
+
+  // Calculate performance level
+  const getPerformanceLevel = () => {
+    const analyzedVideos = videos.filter(v => v.metrics)
+    if (analyzedVideos.length === 0) return { level: 'No Data', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' }
+    const avgScore = analyzedVideos.reduce((sum, v) => sum + (v.metrics?.overall_score || 0), 0) / analyzedVideos.length
+    if (avgScore >= 85) return { level: 'Pro', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' }
+    if (avgScore >= 70) return { level: 'Advanced', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' }
+    if (avgScore >= 50) return { level: 'Intermediate', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' }
+    return { level: 'Beginner', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' }
+  }
+  const perfLevel = getPerformanceLevel()
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-[#0b0f17] text-gray-300 selection:bg-blue-500/30">
@@ -118,9 +162,17 @@ export default function DashboardPage() {
           {/* HEADER */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight text-white">
-                Dashboard
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl font-bold tracking-tight text-white">
+                  Dashboard
+                </h1>
+                {perfLevel.level !== 'No Data' && (
+                  <span className={`text-xs font-medium px-3 py-1 rounded-full border ${perfLevel.color} flex items-center gap-1.5`}>
+                    <Award size={12} />
+                    {perfLevel.level}
+                  </span>
+                )}
+              </div>
               <p className="text-gray-400 mt-2 text-lg">
                 Video analysis and performance tracking.
               </p>
@@ -281,6 +333,54 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
+
+              {/* Coach Feedback Section */}
+              {feedback.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                      <MessageSquare size={20} className="text-emerald-400" />
+                      Coach Feedback
+                    </h2>
+                    <span className="text-sm bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-emerald-400 font-mono">
+                      {feedback.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {feedback.slice(0, 5).map(fb => (
+                      <Card
+                        key={fb.feedback_id}
+                        className="p-5 border border-gray-700 bg-[#161a22] rounded-xl"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-emerald-400">
+                              {fb.coach_name}
+                            </span>
+                            {fb.rating && (
+                              <div className="flex gap-0.5">
+                                {[1, 2, 3, 4, 5].map(s => (
+                                  <Star
+                                    key={s}
+                                    size={12}
+                                    className={fb.rating && fb.rating >= s ? 'text-amber-400' : 'text-gray-700'}
+                                    fill={fb.rating && fb.rating >= s ? 'currentColor' : 'none'}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {fb.created_at ? new Date(fb.created_at).toLocaleDateString() : ''}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-300">{fb.feedback_text}</p>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

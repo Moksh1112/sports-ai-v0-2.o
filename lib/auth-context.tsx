@@ -7,6 +7,7 @@ interface User {
   username: string
   email: string
   full_name?: string
+  role: 'user' | 'coach'
 }
 
 interface AuthContextType {
@@ -14,9 +15,10 @@ interface AuthContextType {
   token: string | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (username: string, email: string, password: string, fullName?: string) => Promise<void>
+  register: (username: string, email: string, password: string, fullName?: string, role?: string) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
+  isCoach: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -30,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedToken = localStorage.getItem('auth_token')
     const storedUser = localStorage.getItem('auth_user')
-    
+
     if (storedToken && storedUser) {
       try {
         setToken(storedToken)
@@ -41,13 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('auth_user')
       }
     }
-    
+
     setLoading(false)
   }, [])
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -59,13 +61,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await response.json()
-      
+
       setToken(data.token)
       setUser({
         user_id: data.user_id,
         username: data.username,
         email: data.email,
         full_name: data.full_name,
+        role: data.role || 'user',
       })
 
       localStorage.setItem('auth_token', data.token)
@@ -74,18 +77,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username: data.username,
         email: data.email,
         full_name: data.full_name,
+        role: data.role || 'user',
       }))
     } catch (error) {
       throw error
     }
   }
 
-  const register = async (username: string, email: string, password: string, fullName?: string) => {
+  const register = async (username: string, email: string, password: string, fullName?: string, role?: string) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password, full_name: fullName }),
+        body: JSON.stringify({ username, email, password, full_name: fullName, role: role || 'user' }),
       })
 
       if (!response.ok) {
@@ -94,13 +98,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await response.json()
-      
+
       setToken(data.token)
       setUser({
         user_id: data.user_id,
         username: data.username,
         email: data.email,
         full_name: data.full_name,
+        role: data.role || 'user',
       })
 
       localStorage.setItem('auth_token', data.token)
@@ -109,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username: data.username,
         email: data.email,
         full_name: data.full_name,
+        role: data.role || 'user',
       }))
     } catch (error) {
       throw error
@@ -131,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
       isAuthenticated: !!user && !!token,
+      isCoach: user?.role === 'coach',
     }}>
       {children}
     </AuthContext.Provider>

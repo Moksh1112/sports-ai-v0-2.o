@@ -10,18 +10,23 @@ import { Card } from '@/components/ui/card'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const { register, isAuthenticated } = useAuth()
+  const { register, isAuthenticated, isCoach } = useAuth()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [role, setRole] = useState<'user' | 'coach'>('user')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    router.push('/dashboard')
+    if (isCoach) {
+      router.push('/coach/dashboard')
+    } else {
+      router.push('/dashboard')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,8 +48,12 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      await register(username, email, password, fullName)
-      router.push('/dashboard')
+      await register(username, email, password, fullName, role)
+      if (role === 'coach') {
+        router.push('/coach/dashboard')
+      } else {
+        router.push('/dashboard')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
@@ -71,6 +80,41 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Role Selector */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                I am a
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRole('user')}
+                  className={`p-4 rounded-xl border-2 transition-all duration-200 text-center ${
+                    role === 'user'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                      : 'border-gray-700 bg-gray-900/50 text-gray-400 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">⚽</div>
+                  <div className="font-semibold text-sm">Player</div>
+                  <div className="text-xs opacity-70 mt-1">Analyze my performance</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('coach')}
+                  className={`p-4 rounded-xl border-2 transition-all duration-200 text-center ${
+                    role === 'coach'
+                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                      : 'border-gray-700 bg-gray-900/50 text-gray-400 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">📋</div>
+                  <div className="font-semibold text-sm">Coach</div>
+                  <div className="text-xs opacity-70 mt-1">Manage players & analytics</div>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Full Name (Optional)
@@ -148,9 +192,13 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              className={`w-full text-white ${
+                role === 'coach'
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-primary hover:bg-primary/90'
+              }`}
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Creating account...' : `Create ${role === 'coach' ? 'Coach' : 'Player'} Account`}
             </Button>
           </form>
 
